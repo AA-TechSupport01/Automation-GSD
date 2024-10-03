@@ -1,0 +1,216 @@
+/////////////////////////////////////////main/////////////////////////////////////////////////////////
+IF (File.IfFile.Exists File: $'''C:\\Users\\MSE230\\OneDrive - Maersk Group\\Documents\\SO Consolidated Report\\(1) FLO Resolved Incidents Last Week - Sudha.xls''') THEN
+    File.Delete Files: $'''C:\\Users\\MSE230\\OneDrive - Maersk Group\\Documents\\SO Consolidated Report\\(1) FLO Resolved Incidents Last Week - Sudha.xls'''
+    File.Delete Files: $'''C:\\Users\\MSE230\\OneDrive - Maersk Group\\Documents\\SO Consolidated Report\\(2) FLO Delivered Requests Last Week - Sudha.xls'''
+    File.Delete Files: $'''C:\\Users\\MSE230\\OneDrive - Maersk Group\\Documents\\SO Consolidated Report\\(3) FLO Outstanding Incidents Week Start - Sudha.xls'''
+    File.Delete Files: $'''C:\\Users\\MSE230\\OneDrive - Maersk Group\\Documents\\SO Consolidated Report\\(4) FLO Outstanding Requests Week Start - Sudha.xls'''
+    File.Delete Files: $'''C:\\Users\\MSE230\\OneDrive - Maersk Group\\Documents\\SO Consolidated Report\\(5) FLO Created Incidents Last Week - Sudha.xls'''
+    File.Delete Files: $'''C:\\Users\\MSE230\\OneDrive - Maersk Group\\Documents\\SO Consolidated Report\\(6) FLO Created Requests Last Week - Sudha.xls'''
+END
+Outlook.Launch Instance=> OutlookInstance
+DateTime.GetCurrentDateTime.Local DateTimeFormat: DateTime.DateTimeFormat.DateOnly CurrentDateTime=> CurrentDateTime
+Text.ConvertDateTimeToText.FromCustomDateTime DateTime: CurrentDateTime CustomFormat: $'''yyyy''' Result=> year
+DateTime.Subtract FromDate: CurrentDateTime SubstractDate: $'''1/1/%year% 12:00:00 AM''' TimeUnit: DateTime.DifferenceTimeUnit.Days TimeDifference=> TimeDifference
+Text.ToNumber Text: TimeDifference / 7 Number=> weekno
+Variables.TruncateNumber.GetDecimalPart Number: weekno Result=> Current_week
+IF Current_week = 0 THEN
+    Variables.TruncateNumber.GetIntegerPart Number: weekno Result=> Current_week
+ELSE
+    Variables.TruncateNumber.GetIntegerPart Number: weekno + 1 Result=> Current_week
+END
+DateTime.Add DateTime: CurrentDateTime TimeToAdd: -1 TimeUnit: DateTime.TimeUnit.Days ResultedDate=> ResultedDate
+Text.ConvertDateTimeToText.FromCustomDateTime DateTime: ResultedDate CustomFormat: $'''yyMMdd''' Result=> transdate
+LOOP LoopIndex FROM 1 TO 6 STEP 1
+    Outlook.RetrieveEmailMessages.RetrieveEmailsAndSaveAttachments Instance: OutlookInstance Account: $'''mann.sethi@maersk.com''' MailFolder: $'''Inbox''' EmailsToRetrieve: Outlook.RetrieveMessagesMode.Unread MarkAsRead: True SubjectContains: $'''(%LoopIndex%) FLO''' SaveAttachmentsInto: $'''C:\\Users\\MSE230\\OneDrive - Maersk Group\\Documents\\SO Consolidated Report''' Messages=> RetrievedEmails
+END
+File.Copy Files: $'''C:\\Users\\MSE230\\OneDrive - Maersk Group\\Documents\\SO Consolidated Report\\Default Format\\FLO Page 0 Consolidated View Default.xlsx''' Destination: $'''C:\\Users\\MSE230\\OneDrive - Maersk Group\\Documents\\SO Consolidated Report\\Uploads''' IfFileExists: File.IfExists.DoNothing CopiedFiles=> CopiedFiles2
+WAIT 5
+File.RenameFiles.Rename Files: CopiedFiles2 NewName: $'''FY%year%-W%Current_week% FLO Page 0 Consolidated View''' KeepExtension: True IfFileExists: File.IfExists.DoNothing RenamedFiles=> RenamedFiles
+WAIT 5
+Excel.LaunchExcel.LaunchAndOpenUnderExistingProcess Path: $'''C:\\Users\\MSE230\\OneDrive - Maersk Group\\Documents\\SO Consolidated Report\\Uploads\\FY%year%-W%Current_week% FLO Page 0 Consolidated View.xlsx''' Visible: True ReadOnly: False Instance=> MainExcel
+WAIT 5
+MouseAndKeyboard.SendKeys.FocusAndSendKeysByInstanceOrHandle WindowInstance: MainExcel TextToSend: $'''{Return}''' DelayBetweenKeystrokes: 10 SendTextAsHardwareKeys: False
+UIAutomation.SetWindowState.SetStateByInstanceOrHandle WindowInstance: MainExcel State: UIAutomation.WindowState.Maximized
+WAIT 5
+CALL FLO_1
+WAIT 5
+CALL FLO_2
+WAIT 5
+CALL FLO_3
+WAIT 5
+CALL FLO_4
+WAIT 5
+CALL FLO_5
+WAIT 5
+CALL FLO_6
+WAIT 5
+MouseAndKeyboard.SendKeys.FocusAndSendKeysByInstanceOrHandle WindowInstance: MainExcel TextToSend: $'''{LMenu}()''' DelayBetweenKeystrokes: 10 SendTextAsHardwareKeys: False
+@@source: 'Recorder'
+WAIT 2
+MouseAndKeyboard.SendKeys.FocusAndSendKeysByInstanceOrHandle WindowInstance: MainExcel TextToSend: $'''ara''' DelayBetweenKeystrokes: 1000 SendTextAsHardwareKeys: False
+WAIT 5
+Excel.CloseExcel.CloseAndSave Instance: MainExcel
+ON ERROR REPEAT 2 TIMES WAIT 2
+ON ERROR
+
+END
+WAIT 5
+File.Copy Files: $'''C:\\Users\\MSE230\\OneDrive - Maersk Group\\Documents\\SO Consolidated Report\\Uploads\\FY%year%-W%Current_week% FLO Page 0 Consolidated View.xlsx''' Destination: $'''C:\\Users\\MSE230\\Maersk Group\\SO - Consolidated Performance Dialogue - 2024''' IfFileExists: File.IfExists.Overwrite CopiedFiles=> CopiedFiles
+
+
+
+
+
+
+
+
+/////////////////////////////////////subtask-FLO_1//////////////////////////////////////
+
+Excel.SetActiveWorksheet.ActivateWorksheetByName Instance: MainExcel Name: $'''(1) Resolved INCs'''
+Excel.GetFirstFreeColumnRow Instance: MainExcel FirstFreeColumn=> FreeColumn_M1 FirstFreeRow=> FreeRow_M1
+DISABLE Excel.DeleteCells.DeleteCells Instance: MainExcel StartColumn: $'''B''' StartRow: 2 EndColumn: FreeColumn_M1 - 1 EndRow: FreeRow_M1 - 1 ShiftCellsDirection: Excel.ShiftCellsDirection.Left
+Excel.LaunchExcel.LaunchAndOpenUnderExistingProcess Path: $'''C:\\Users\\MSE230\\OneDrive - Maersk Group\\Documents\\SO Consolidated Report\\(1) FLO Resolved Incidents Last Week - Sudha.xls''' Visible: True ReadOnly: False Instance=> ExcelInstance1
+Excel.GetFirstFreeColumnRow Instance: ExcelInstance1 FirstFreeColumn=> FreeColumn_R1 FirstFreeRow=> FreeRow_R1
+Excel.CopyCellsFromExcel.CopyCells Instance: ExcelInstance1 StartColumn: $'''A''' StartRow: 2 EndColumn: FreeColumn_R1 - 1 EndRow: FreeRow_R1 - 1
+Excel.PasteCellsToExcel.PasteAt Instance: MainExcel Column: $'''B''' Row: 2
+Excel.CloseExcel.Close Instance: ExcelInstance1
+Excel.DeleteCells.DeleteCells Instance: MainExcel StartColumn: $'''A''' StartRow: FreeRow_R1 EndColumn: $'''A''' EndRow: 1048576 ShiftCellsDirection: Excel.ShiftCellsDirection.Left
+Excel.SelectCellsFromExcel.SelectCells Instance: MainExcel StartColumn: $'''B''' StartRow: 2 EndColumn: FreeColumn_M1 - 1 EndRow: FreeRow_R1 - 1
+@@source: 'Recorder'
+WAIT 2
+MouseAndKeyboard.SendKeys.FocusAndSendKeysByInstanceOrHandle WindowInstance: MainExcel TextToSend: $'''{LMenu}()''' DelayBetweenKeystrokes: 10 SendTextAsHardwareKeys: False
+@@source: 'Recorder'
+WAIT 2
+MouseAndKeyboard.SendKeys.FocusAndSendKeysByInstanceOrHandle WindowInstance: MainExcel TextToSend: $'''hw''' DelayBetweenKeystrokes: 1000 SendTextAsHardwareKeys: False
+
+
+
+
+
+
+/////////////////////////////////////subtask-FLO_2//////////////////////////////////////
+
+Excel.SetActiveWorksheet.ActivateWorksheetByName Instance: MainExcel Name: $'''(2) Delivered REQs'''
+Excel.GetFirstFreeColumnRow Instance: MainExcel FirstFreeColumn=> FreeColumn_M2 FirstFreeRow=> FreeRow_M2
+DISABLE Excel.DeleteCells.DeleteCells Instance: MainExcel StartColumn: $'''B''' StartRow: 2 EndColumn: FreeColumn_M2 - 1 EndRow: FreeRow_M2 - 1 ShiftCellsDirection: Excel.ShiftCellsDirection.Up
+Excel.LaunchExcel.LaunchAndOpenUnderExistingProcess Path: $'''C:\\Users\\MSE230\\OneDrive - Maersk Group\\Documents\\SO Consolidated Report\\(2) FLO Delivered Requests Last Week - Sudha.xls''' Visible: True ReadOnly: False Instance=> ExcelInstance2
+Excel.GetFirstFreeColumnRow Instance: ExcelInstance2 FirstFreeColumn=> FreeColumn_R2 FirstFreeRow=> FreeRow_R2
+Excel.CopyCellsFromExcel.CopyCells Instance: ExcelInstance2 StartColumn: $'''A''' StartRow: 2 EndColumn: FreeColumn_R2 - 1 EndRow: FreeRow_R2 - 1
+Excel.PasteCellsToExcel.PasteAt Instance: MainExcel Column: $'''B''' Row: 2
+Excel.CloseExcel.Close Instance: ExcelInstance2
+Excel.DeleteCells.DeleteCells Instance: MainExcel StartColumn: $'''A''' StartRow: FreeRow_R2 EndColumn: $'''A''' EndRow: 1048576 ShiftCellsDirection: Excel.ShiftCellsDirection.Left
+Excel.SelectCellsFromExcel.SelectCells Instance: MainExcel StartColumn: $'''B''' StartRow: 2 EndColumn: FreeColumn_M2 - 1 EndRow: FreeRow_R2 - 1
+@@source: 'Recorder'
+WAIT 2
+MouseAndKeyboard.SendKeys.FocusAndSendKeysByInstanceOrHandle WindowInstance: MainExcel TextToSend: $'''{LMenu}()''' DelayBetweenKeystrokes: 10 SendTextAsHardwareKeys: False
+@@source: 'Recorder'
+WAIT 2
+MouseAndKeyboard.SendKeys.FocusAndSendKeysByInstanceOrHandle WindowInstance: MainExcel TextToSend: $'''hw''' DelayBetweenKeystrokes: 1000 SendTextAsHardwareKeys: False
+
+
+
+
+
+
+
+
+
+/////////////////////////////////////subtask-FLO_3//////////////////////////////////////
+
+Excel.SetActiveWorksheet.ActivateWorksheetByName Instance: MainExcel Name: $'''(3) Outstanding INCs'''
+Excel.GetFirstFreeColumnRow Instance: MainExcel FirstFreeColumn=> FreeColumn_M3 FirstFreeRow=> FreeRow_M3
+DISABLE Excel.DeleteCells.DeleteCells Instance: MainExcel StartColumn: $'''B''' StartRow: 2 EndColumn: FreeColumn_M3 - 1 EndRow: FreeRow_M3 - 1 ShiftCellsDirection: Excel.ShiftCellsDirection.Up
+Excel.LaunchExcel.LaunchAndOpenUnderExistingProcess Path: $'''C:\\Users\\MSE230\\OneDrive - Maersk Group\\Documents\\SO Consolidated Report\\(3) FLO Outstanding Incidents Week Start - Sudha.xls''' Visible: True ReadOnly: False Instance=> ExcelInstance3
+Excel.GetFirstFreeColumnRow Instance: ExcelInstance3 FirstFreeColumn=> FreeColumn_R3 FirstFreeRow=> FreeRow_R3
+Excel.CopyCellsFromExcel.CopyCells Instance: ExcelInstance3 StartColumn: $'''A''' StartRow: 2 EndColumn: FreeColumn_R3 - 1 EndRow: FreeRow_R3 - 1
+Excel.PasteCellsToExcel.PasteAt Instance: MainExcel Column: $'''E''' Row: 2
+Excel.CloseExcel.Close Instance: ExcelInstance3
+WAIT 5
+Excel.DeleteCells.DeleteCells Instance: MainExcel StartColumn: $'''C''' StartRow: FreeRow_R3 EndColumn: $'''D''' EndRow: 1048576 ShiftCellsDirection: Excel.ShiftCellsDirection.Left
+WAIT 5
+Excel.SelectCellsFromExcel.SelectCells Instance: MainExcel StartColumn: $'''C''' StartRow: 2 EndColumn: FreeColumn_M3 - 1 EndRow: FreeRow_R3 - 1
+WAIT 5
+MouseAndKeyboard.SendKeys.FocusAndSendKeysByInstanceOrHandle WindowInstance: MainExcel TextToSend: $'''{LMenu}()''' DelayBetweenKeystrokes: 10 SendTextAsHardwareKeys: False
+WAIT 5
+MouseAndKeyboard.SendKeys.FocusAndSendKeysByInstanceOrHandle WindowInstance: MainExcel TextToSend: $'''hw''' DelayBetweenKeystrokes: 1000 SendTextAsHardwareKeys: False
+WAIT 5
+MouseAndKeyboard.SendKeys.FocusAndSendKeysByInstanceOrHandle WindowInstance: MainExcel TextToSend: $'''{LMenu}()''' DelayBetweenKeystrokes: 10 SendTextAsHardwareKeys: False
+WAIT 5
+MouseAndKeyboard.SendKeys.FocusAndSendKeysByInstanceOrHandle WindowInstance: MainExcel TextToSend: $'''hw''' DelayBetweenKeystrokes: 1000 SendTextAsHardwareKeys: False
+
+
+
+
+
+/////////////////////////////////////subtask-FLO_4//////////////////////////////////////
+
+Excel.SetActiveWorksheet.ActivateWorksheetByName Instance: MainExcel Name: $'''(4) Outstanding REQs'''
+Excel.GetFirstFreeColumnRow Instance: MainExcel FirstFreeColumn=> FreeColumn_M4 FirstFreeRow=> FreeRow_M4
+DISABLE Excel.DeleteCells.DeleteCells Instance: MainExcel StartColumn: $'''B''' StartRow: 2 EndColumn: FreeColumn_M4 - 1 EndRow: FreeRow_M4 - 1 ShiftCellsDirection: Excel.ShiftCellsDirection.Up
+Excel.LaunchExcel.LaunchAndOpenUnderExistingProcess Path: $'''C:\\Users\\MSE230\\OneDrive - Maersk Group\\Documents\\SO Consolidated Report\\(4) FLO Outstanding Requests Week Start - Sudha.xls''' Visible: True ReadOnly: False Instance=> ExcelInstance4
+Excel.GetFirstFreeColumnRow Instance: ExcelInstance4 FirstFreeColumn=> FreeColumn_R4 FirstFreeRow=> FreeRow_R4
+Excel.CopyCellsFromExcel.CopyCells Instance: ExcelInstance4 StartColumn: $'''A''' StartRow: 2 EndColumn: FreeColumn_R4 - 1 EndRow: FreeRow_R4 - 1
+Excel.PasteCellsToExcel.PasteAt Instance: MainExcel Column: $'''E''' Row: 2
+Excel.CloseExcel.Close Instance: ExcelInstance4
+WAIT 5
+Excel.DeleteCells.DeleteCells Instance: MainExcel StartColumn: $'''C''' StartRow: FreeRow_R4 EndColumn: $'''D''' EndRow: 1048576 ShiftCellsDirection: Excel.ShiftCellsDirection.Left
+WAIT 5
+Excel.SelectCellsFromExcel.SelectCells Instance: MainExcel StartColumn: $'''C''' StartRow: 2 EndColumn: FreeColumn_M4 - 1 EndRow: FreeRow_R4 - 1
+@@source: 'Recorder'
+WAIT 2
+MouseAndKeyboard.SendKeys.FocusAndSendKeysByInstanceOrHandle WindowInstance: MainExcel TextToSend: $'''{LMenu}()''' DelayBetweenKeystrokes: 10 SendTextAsHardwareKeys: False
+WAIT 5
+MouseAndKeyboard.SendKeys.FocusAndSendKeysByInstanceOrHandle WindowInstance: MainExcel TextToSend: $'''hw''' DelayBetweenKeystrokes: 1000 SendTextAsHardwareKeys: False
+WAIT 5
+MouseAndKeyboard.SendKeys.FocusAndSendKeysByInstanceOrHandle WindowInstance: MainExcel TextToSend: $'''{LMenu}()''' DelayBetweenKeystrokes: 10 SendTextAsHardwareKeys: False
+@@source: 'Recorder'
+WAIT 2
+MouseAndKeyboard.SendKeys.FocusAndSendKeysByInstanceOrHandle WindowInstance: MainExcel TextToSend: $'''hw''' DelayBetweenKeystrokes: 1000 SendTextAsHardwareKeys: False
+
+
+
+
+
+
+/////////////////////////////////////subtask-FLO_5//////////////////////////////////////
+
+Excel.SetActiveWorksheet.ActivateWorksheetByName Instance: MainExcel Name: $'''(5) Created INCs'''
+Excel.GetFirstFreeColumnRow Instance: MainExcel FirstFreeColumn=> FreeColumn_M5 FirstFreeRow=> FreeRow_M5
+DISABLE Excel.DeleteCells.DeleteCells Instance: MainExcel StartColumn: $'''B''' StartRow: 2 EndColumn: FreeColumn_M5 - 1 EndRow: FreeRow_M5 - 1 ShiftCellsDirection: Excel.ShiftCellsDirection.Up
+Excel.LaunchExcel.LaunchAndOpenUnderExistingProcess Path: $'''C:\\Users\\MSE230\\OneDrive - Maersk Group\\Documents\\SO Consolidated Report\\(5) FLO Created Incidents Last Week - Sudha.xls''' Visible: True ReadOnly: False Instance=> ExcelInstance5
+Excel.GetFirstFreeColumnRow Instance: ExcelInstance5 FirstFreeColumn=> FreeColumn_R5 FirstFreeRow=> FreeRow_R5
+Excel.CopyCellsFromExcel.CopyCells Instance: ExcelInstance5 StartColumn: $'''A''' StartRow: 2 EndColumn: FreeColumn_R5 - 1 EndRow: FreeRow_R5 - 1
+Excel.PasteCellsToExcel.PasteAt Instance: MainExcel Column: $'''A''' Row: 2
+Excel.CloseExcel.Close Instance: ExcelInstance5
+WAIT 5
+Excel.SelectCellsFromExcel.SelectCells Instance: MainExcel StartColumn: $'''A''' StartRow: 2 EndColumn: FreeColumn_M5 - 1 EndRow: FreeRow_R5 - 1
+@@source: 'Recorder'
+WAIT 2
+MouseAndKeyboard.SendKeys.FocusAndSendKeysByInstanceOrHandle WindowInstance: MainExcel TextToSend: $'''{LMenu}()''' DelayBetweenKeystrokes: 10 SendTextAsHardwareKeys: False
+@@source: 'Recorder'
+WAIT 2
+MouseAndKeyboard.SendKeys.FocusAndSendKeysByInstanceOrHandle WindowInstance: MainExcel TextToSend: $'''hw''' DelayBetweenKeystrokes: 1000 SendTextAsHardwareKeys: False
+
+
+
+
+
+
+/////////////////////////////////////subtask-FLO_6//////////////////////////////////////
+
+Excel.SetActiveWorksheet.ActivateWorksheetByName Instance: MainExcel Name: $'''(6) Created REQs'''
+Excel.GetFirstFreeColumnRow Instance: MainExcel FirstFreeColumn=> FreeColumn_M6 FirstFreeRow=> FreeRow_M6
+DISABLE Excel.DeleteCells.DeleteCells Instance: MainExcel StartColumn: $'''B''' StartRow: 2 EndColumn: FreeColumn_M6 - 1 EndRow: FreeRow_M6 - 1 ShiftCellsDirection: Excel.ShiftCellsDirection.Up
+Excel.LaunchExcel.LaunchAndOpenUnderExistingProcess Path: $'''C:\\Users\\MSE230\\OneDrive - Maersk Group\\Documents\\SO Consolidated Report\\(6) FLO Created Requests Last Week - Sudha.xls''' Visible: True ReadOnly: False Instance=> ExcelInstance6
+Excel.GetFirstFreeColumnRow Instance: ExcelInstance6 FirstFreeColumn=> FreeColumn_R6 FirstFreeRow=> FreeRow_R6
+Excel.CopyCellsFromExcel.CopyCells Instance: ExcelInstance6 StartColumn: $'''A''' StartRow: 2 EndColumn: FreeColumn_R6 - 1 EndRow: FreeRow_R6 - 1
+Excel.PasteCellsToExcel.PasteAt Instance: MainExcel Column: $'''A''' Row: 2
+Excel.CloseExcel.Close Instance: ExcelInstance6
+WAIT 5
+Excel.SelectCellsFromExcel.SelectCells Instance: MainExcel StartColumn: $'''A''' StartRow: 2 EndColumn: FreeColumn_M6 - 1 EndRow: FreeRow_R6 - 1
+@@source: 'Recorder'
+WAIT 2
+MouseAndKeyboard.SendKeys.FocusAndSendKeysByInstanceOrHandle WindowInstance: MainExcel TextToSend: $'''{LMenu}()''' DelayBetweenKeystrokes: 10 SendTextAsHardwareKeys: False
+@@source: 'Recorder'
+WAIT 2
+MouseAndKeyboard.SendKeys.FocusAndSendKeysByInstanceOrHandle WindowInstance: MainExcel TextToSend: $'''hw''' DelayBetweenKeystrokes: 1000 SendTextAsHardwareKeys: False

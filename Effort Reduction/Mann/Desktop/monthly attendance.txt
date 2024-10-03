@@ -1,0 +1,88 @@
+/////////////////////////////////////////main/////////////////////////////////////////////////////////
+DateTime.GetCurrentDateTime.Local DateTimeFormat: DateTime.DateTimeFormat.DateAndTime CurrentDateTime=> CurrentDateTime
+Text.ConvertDateTimeToText.FromCustomDateTime DateTime: CurrentDateTime CustomFormat: $'''MMM yyyy ''' Result=> FormattedDateTime
+Excel.LaunchExcel.LaunchAndOpenUnderExistingProcess Path: $'''C:\\Users\\MSE230\\OneDrive - Maersk Group\\Documents\\Monthly Attendance Sheet\\TIME SHEET 2023.xlsx''' Visible: True ReadOnly: False Instance=> ExcelInstance
+Excel.SetActiveWorksheet.ActivateWorksheetByName Instance: ExcelInstance Name: $'''Oct 2023'''
+Text.ConvertDateTimeToText.FromCustomDateTime DateTime: CurrentDateTime CustomFormat: $'''MMM yyyy''' Result=> FormattedDateTime2
+Excel.CopyCellsFromExcel.CopyCells Instance: ExcelInstance StartColumn: $'''A''' StartRow: 1 EndColumn: $'''AR''' EndRow: 14
+Excel.LaunchExcel.LaunchAndOpenUnderExistingProcess Path: $'''C:\\Users\\MSE230\\OneDrive - Maersk Group\\Documents\\Monthly Attendance Sheet\\TIME SHEET 2024.xlsx''' Visible: True ReadOnly: False Instance=> ExcelInstance2
+Excel.AddWorksheet Instance: ExcelInstance2 Name: FormattedDateTime2 WorksheetPosition: Excel.WorksheetPosition.Last
+Excel.SetActiveWorksheet.ActivateWorksheetByName Instance: ExcelInstance2 Name: FormattedDateTime2
+Excel.PasteCellsToExcel.Paste Instance: ExcelInstance2
+Text.ConvertDateTimeToText.FromCustomDateTime DateTime: CurrentDateTime CustomFormat: $'''MM''' Result=> MONTH
+Text.ToNumber Text: MONTH Number=> MONTH_NUMBER
+CALL lastdate_curr_month
+IF MONTH_NUMBER = 2 THEN
+    CALL Feb_dates_delete
+END
+IF Last_date_no = 30 THEN
+    CALL DeleteACol_Excel
+END
+LOOP LoopIndex FROM 1 TO Last_date_no STEP 1
+    DateTime.Add DateTime: CurrentDateTime TimeToAdd: LoopIndex - 1 TimeUnit: DateTime.TimeUnit.Days ResultedDate=> ResultedDate
+    Text.ConvertDateTimeToText.FromCustomDateTime DateTime: ResultedDate CustomFormat: $'''dd-MMM''' Result=> Date
+    Text.ConvertDateTimeToText.FromCustomDateTime DateTime: ResultedDate CustomFormat: $'''ddd''' Result=> Day
+    Excel.WriteToExcel.WriteCell Instance: ExcelInstance2 Value: Date Column: LoopIndex + 6 Row: 10
+    Excel.WriteToExcel.WriteCell Instance: ExcelInstance2 Value: Day Column: LoopIndex + 6 Row: 11
+    IF (Day = 'Sat' OR Day = 'Sun') = $'''TRUE''' THEN
+        Excel.WriteToExcel.WriteCell Instance: ExcelInstance2 Value: $'''WO''' Column: LoopIndex + 6 Row: 12
+        Excel.WriteToExcel.WriteCell Instance: ExcelInstance2 Value: $'''WO''' Column: LoopIndex + 6 Row: 13
+        Excel.WriteToExcel.WriteCell Instance: ExcelInstance2 Value: $'''WO''' Column: LoopIndex + 6 Row: 14
+    END
+END
+Excel.CloseExcel.CloseAndSave Instance: ExcelInstance
+Excel.CloseExcel.CloseAndSave Instance: ExcelInstance2
+Outlook.Launch Instance=> OutlookInstance
+Outlook.SendEmailThroughOutlook.SendEmail Instance: OutlookInstance Account: $'''mann.sethi@maersk.com''' SendTo: $'''sudha.ranganathan@maersk.com''' CC: $'''sejal.j@maersk.com''' Subject: $'''Monthly Attendance Sheet''' Body: $'''Please find the attached monthly TIME SHEET 2024.''' IsBodyHtml: False Attachments: $'''C:\\Users\\MSE230\\OneDrive - Maersk Group\\Documents\\Monthly Attendance Sheet\\TIME SHEET 2024.xlsx'''
+Outlook.Close Instance: OutlookInstance
+
+
+
+
+
+
+
+/////////////////////////////////////subtask-lastdate_curr_month//////////////////////////////////////
+
+FUNCTION lastdate_curr_month GLOBAL
+    DateTime.GetCurrentDateTime.Local DateTimeFormat: DateTime.DateTimeFormat.DateAndTime CurrentDateTime=> new_CurrentDateTime
+    Text.ConvertDateTimeToText.FromCustomDateTime DateTime: new_CurrentDateTime CustomFormat: $'''dd''' Result=> new_FormattedDateTime
+    Text.ToNumber Text: new_FormattedDateTime Number=> new_TextAsNumber
+    DateTime.Add DateTime: new_CurrentDateTime TimeToAdd: -new_TextAsNumber + 1 TimeUnit: DateTime.TimeUnit.Days ResultedDate=> First_date
+    DateTime.Add DateTime: First_date TimeToAdd: 1 TimeUnit: DateTime.TimeUnit.Months ResultedDate=> result_month
+    DateTime.Add DateTime: result_month TimeToAdd: -1 TimeUnit: DateTime.TimeUnit.Days ResultedDate=> last_date
+    Text.ConvertDateTimeToText.FromCustomDateTime DateTime: last_date CustomFormat: $'''dd''' Result=> Last_date_of_month
+    Text.ToNumber Text: Last_date_of_month Number=> Last_date_no
+END FUNCTION
+
+
+
+
+
+/////////////////////////////////////subtask-Feb_dates_delete//////////////////////////////////////
+
+FUNCTION Feb_dates_delete GLOBAL
+    IF MONTH_NUMBER = 2 THEN
+        Excel.DeleteColumn Instance: ExcelInstance2 Column: $'''AI'''
+        Excel.DeleteColumn Instance: ExcelInstance2 Column: $'''AJ'''
+        Excel.DeleteColumn Instance: ExcelInstance2 Column: $'''AK'''
+        IF Last_date_no = 28 THEN
+            Excel.DeleteColumn Instance: ExcelInstance2 Column: $'''AH'''
+        END
+    END
+END FUNCTION
+
+
+
+
+
+
+
+
+/////////////////////////////////////subtask-DeleteACol_Excel//////////////////////////////////////
+
+FUNCTION DeleteACol_Excel GLOBAL
+    IF Last_date_no = 30 THEN
+        Excel.DeleteColumn Instance: ExcelInstance2 Column: $'''AK'''
+    END
+END FUNCTION
